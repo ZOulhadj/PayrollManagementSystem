@@ -3,19 +3,29 @@ using System.Threading;
 
 namespace PayrollManagementSystem
 {
-    class Application
+    public class Application
     {
+        private int consoleWidth, consoleHeight;
         private int index = 0;
+
 
         public string title = "Payroll Mangement System";
         public string[] commands = { "(1) New Payroll", "(2) View Payroll", "(3) Print Payroll" };
 
+        public Application(int width, int height)
+        {
+            consoleWidth = width;
+            consoleHeight = height;
+
+            InitialiseWindow();
+        }
+
         // Initialise the console window
-        public void InitialiseWindow(int width, int height)
+        public void InitialiseWindow()
         {
             // Set console and buffer size
-            Console.SetWindowSize(width, height);
-            Console.SetBufferSize(width, height);
+            Console.SetWindowSize(consoleWidth, consoleHeight);
+            Console.SetBufferSize(consoleWidth, consoleHeight);
         }
 
         // Print strings onto the console
@@ -57,9 +67,6 @@ namespace PayrollManagementSystem
 
                     return commands[--index];
 
-                case ConsoleKey.Enter:
-                    return "Enter";
-
                 default:
                     return commands[index];
             }
@@ -82,8 +89,7 @@ namespace PayrollManagementSystem
         static void Main(string[] args)
         {
             // Initialise application
-            Application application = new Application();
-            application.InitialiseWindow(50, 20);
+            Application application = new Application(50, 20);
 
             string currentCommand = application.commands[0];
             while (true)
@@ -96,12 +102,7 @@ namespace PayrollManagementSystem
                 // Get user command
                 currentCommand = application.GetCommand();
 
-                if (currentCommand == "Enter")
-                {
-                    // Do task
-                    Console.WriteLine("test");
-                }
-
+                // TODO: If user enters then complete task
                 Thread.Sleep(1);
             }
         }
