@@ -1,15 +1,32 @@
 ﻿using System;
 using System.Threading;
+using System.Collections.Specialized;
 
 namespace PayrollManagementSystem
 {
+    // Command types interface
+    public enum CommandTypes
+    {
+        NEWPAYROLL, 
+        VIEWPAYROLL, 
+        PRINTPAYROLL, 
+        NEWCUSTOMER 
+    };
+
     public class Application
     {
         private int consoleWidth, consoleHeight;
-        private int index = 0;
-
+        private int commandIndex = 0;
         public string title = "Payroll Mangement System";
-        public string[] commands = { "(1) New Payroll", "(2) View Payroll", "(3) Print Payroll", "(4) New Customer" };
+
+        // An ordered array of commands
+        public OrderedDictionary commands = new OrderedDictionary
+        {
+            { CommandTypes.NEWPAYROLL,      "(1) New Payroll" },
+            { CommandTypes.VIEWPAYROLL,     "(2) View Payroll" },
+            { CommandTypes.PRINTPAYROLL,    "(3) Print Payroll" },
+            { CommandTypes.NEWCUSTOMER,     "(4) New Customer" }
+        };
 
         public Application(int width, int height)
         {
@@ -26,62 +43,109 @@ namespace PayrollManagementSystem
         {
             // Set console and buffer size
             Console.SetWindowSize(consoleWidth, consoleHeight);
-            Console.SetBufferSize(consoleWidth, consoleHeight);
+            //Console.SetBufferSize(consoleWidth, consoleHeight);
             Console.BackgroundColor = ConsoleColor.DarkBlue;
+            Console.CursorVisible = false;
         }
 
         // Print strings onto the console
-        public void Print(object message, ConsoleColor textColor = ConsoleColor.White, int position = 0)
+        public void Print(object message,
+                          ConsoleColor textColor = ConsoleColor.White,
+                          ConsoleColor backgroundColor = ConsoleColor.DarkBlue,
+                          int position = 0,
+                          bool add = false)
         {
             // Set cursor position and print message
-            Console.SetCursorPosition((Console.WindowWidth - title.Length) / 2 + position, Console.CursorTop);
+            if (add)
+                Console.SetCursorPosition((Console.WindowWidth + title.Length) / 2 + position, Console.CursorTop);
+            else
+                Console.SetCursorPosition((Console.WindowWidth - title.Length) / 2 + position, Console.CursorTop);
+
             Console.ForegroundColor = textColor;
+            Console.BackgroundColor = backgroundColor;
             Console.Write(message);
             Console.ForegroundColor = ConsoleColor.White;
+            Console.BackgroundColor = ConsoleColor.DarkBlue;
         }
 
-        // Print message and accept user input 
+        // Prints message and accepts user input 
         public string Input(object message)
         {
             Print(message);
             return Console.ReadLine();
         }
 
-
         // Print title
         public void PrintTitle()
         {
             // Print top title border
             for (int i = 0; i < title.Length; ++i)
-                Print((i < title.Length - 1) ? "*" : "*\n", ConsoleColor.White, i);
+                Print((i < title.Length - 1) ? "*" : "*\n", ConsoleColor.White, ConsoleColor.DarkBlue, i);
 
             // Print appliation title
             Print(title + "\n");
 
             // Print bottom title border
             for (int i = 0; i < title.Length; ++i)
-                Print((i < title.Length - 1) ? "*" : "*\n", ConsoleColor.White, i);
+                Print((i < title.Length - 1) ? "*" : "*\n", ConsoleColor.White, ConsoleColor.DarkBlue, i);
+        }
+
+        // Display buttons and accept user input
+        public string ButtonInput(string first, string second)
+        {
+            // Display initial buttons
+            Print(second, ConsoleColor.White, ConsoleColor.DarkBlue, 0, true);
+            Print(first, ConsoleColor.Black, ConsoleColor.White);
+
+            // Button selection
+            string choice = "";
+            while (true)
+            {  
+                switch (Console.ReadKey().Key)
+                {
+                    case ConsoleKey.LeftArrow:
+                        Print(second, ConsoleColor.White, ConsoleColor.DarkBlue, 0, true);
+                        Print(first, ConsoleColor.Black, ConsoleColor.White);
+
+                        choice = first;
+                        break;
+                    case ConsoleKey.RightArrow:
+                        Print(first, ConsoleColor.White, ConsoleColor.DarkBlue);
+                        Print(second, ConsoleColor.Black, ConsoleColor.White, 0, true);
+
+                        choice = second;
+                        break;
+                    case ConsoleKey.Enter:
+                        return choice;
+                    default:
+                        break;
+                }
+            }
+        }
+
+        // Get string command based on the command type
+        public string GetCommand(CommandTypes commandType)
+        {
+            return commands[commandType].ToString();
         }
 
         // Filter through commands
-        public string GetCommand()
+        public string CommandList()
         {
             switch (Console.ReadKey().Key)
             {
                 case ConsoleKey.UpArrow:
-                    if (index == commands.Length - 1)
-                        return commands[index = 0];
+                    if (commandIndex == commands.Count - 1)
+                        return commands[commandIndex = 0].ToString();
 
-                    return commands[++index];
-
+                    return commands[++commandIndex].ToString();
                 case ConsoleKey.DownArrow:
-                    if (index == 0)
-                        return commands[index = commands.Length - 1];
+                    if (commandIndex == 0)
+                        return commands[commandIndex = commands.Count - 1].ToString();
 
-                    return commands[--index];
-
+                    return commands[--commandIndex].ToString();
                 default:
-                    return commands[index];
+                    return commands[commandIndex].ToString();
             }
         }
     }
@@ -93,8 +157,8 @@ namespace PayrollManagementSystem
         MANAGER = 56,
         SUPERVISOR = 56,
         CATERING = 49,
-        WAITERS = 35,
-        CLEANERS = 14
+        WAITER = 35,
+        CLEANER = 14
     }
 
     public struct Employee
@@ -113,127 +177,147 @@ namespace PayrollManagementSystem
 
         public double normalPay, overtimePay, grossPay, totalDeductions, netPay;
 
+        public void CalculateEmployeeEarnings()
+        {
+            // Calculate hourly pay
+            if (age < 17)
+                hourlyPay = 3.72;
+            else if (age < 19 && apprentice == true)
+                hourlyPay = 2.68;
+            else if (age >= 19 && apprentice == true)
+                hourlyPay = 2.68;
+            else if (age <= 20)
+                hourlyPay = 5.03;
+            else if (age >= 21)
+                hourlyPay = 6.31;
+
+            normalPay = Math.Round(hourlyPay * (weeklyHours * 4), 2);
+            overtimePay = Math.Round(hourlyPay * overtimeHours, 2);
+            grossPay = Math.Round(normalPay + overtimePay, 2);
+        }
     }
 
 
     class Program
     {
 
-        public static void CalculateEmployeeEarnings(ref Employee employee)
-        {
-            // Calculate hourly pay
-            if (employee.age < 17)
-                employee.hourlyPay = 3.72;
-            else if (employee.age < 19 && employee.apprentice == true)
-                employee.hourlyPay = 2.68;
-            else if (employee.age >= 19 && employee.apprentice == true)
-                employee.hourlyPay = 2.68;
-            else if (employee.age <= 20)
-                employee.hourlyPay = 5.03;
-            else if (employee.age >= 21)
-                employee.hourlyPay = 6.31;
-
-            employee.normalPay = employee.hourlyPay * (employee.weeklyHours * 4);
-            employee.overtimePay = employee.hourlyPay * employee.overtimeHours;
-            employee.grossPay = employee.normalPay + employee.overtimePay;
-        }
-
         static void Main(string[] args)
         {
             // Initialise application
-            Application application = new Application(50, 20);
+            Application application = new Application(80, 30);
 
             // Initialise employee data
             Employee[] employees = new Employee[33];
             employees[0].id = 22;
             employees[0].name = "Zakariya";
             employees[0].age = 18;
-            employees[0].jobTitle = Enum.GetName(typeof(PositionHours), PositionHours.WAITERS);
+            employees[0].jobTitle = Enum.GetName(typeof(PositionHours), PositionHours.HEADCHEF);
             employees[0].nationalInsurance = 4520;
             employees[0].taxCode = "9LUQ";
-
+            employees[0].apprentice = true;
             // Calculate weekly hours based on the job title
             employees[0].weeklyHours = (int)Enum.Parse(typeof(PositionHours), employees[0].jobTitle);
 
-            string currentCommand = application.commands[0];
+            string currentCommand = application.GetCommand(CommandTypes.NEWPAYROLL);
             while (true)
             {
                 Console.Clear();
                 application.PrintTitle();
+
                 application.Print("Command: ");
                 Console.Write(currentCommand);
 
-                // Get user command
-                currentCommand = application.GetCommand();
+                // Get command using input (arrow keys)
+                currentCommand = application.CommandList();
 
+                // Depending on the command do certain actions
                 if (Console.ReadKey().Key == ConsoleKey.Enter)
                 {
-                    switch (currentCommand)
+                    if (currentCommand == application.commands[CommandTypes.NEWPAYROLL].ToString())
                     {
-                        case "(1) New Payroll":
-                            Console.Clear();
-                            application.PrintTitle();
-                            string payrollDateRange = DateTime.Today.AddMonths(-1).ToString("dd/MM/yyyy") + " - " + DateTime.Today.ToString("dd/MM/yyyy");
-                            application.Print("New Payroll (" + payrollDateRange + ")\n\n");
-                            
-                            string id = application.Input("Employee ID: ");
-                            application.Print("\n");
-
-                            // If an employee is found, print their information
-                            if (id == employees[0].id.ToString())
-                            {
-                                application.Print("Employee Name: " + employees[0].name + "\n");
-                                application.Print("Employee Age: " + employees[0].age + "\n");
-                                application.Print("Employee Job Title: " + employees[0].jobTitle + "\n");
-                                application.Print("Employee NI: " + employees[0].nationalInsurance + "\n");
-                                application.Print("Employee Tax Code: " + employees[0].taxCode + "\n");
-                            }
-                            else
-                            {
-                                application.Print("Employee Not Found.", ConsoleColor.Red);
-                                Console.ReadLine();
-
-                                break;
-                            }
-
-                            application.Print("\n");
-                            application.Print("Hours: " + employees[0].weeklyHours * 4 + "\n");
-                            employees[0].overtimeHours = int.Parse(application.Input("Overtime: "));
-
-                            break;
+                        Console.Clear();
+                        application.PrintTitle();
+                        application.Print("New Payroll\n\n");
                         
-                        case "(2) View Payroll":
+                        // Display payslip date range (1 Month)
+                        string payrollDateRange = DateTime.Today.AddMonths(-1).ToString("dd/MM/yyyy") + " - " + DateTime.Today.ToString("dd/MM/yyyy");
+                        application.Print(payrollDateRange + "\n\n");
+
+                        foreach (Employee employee in employees)
+                        {
                             Console.Clear();
                             application.PrintTitle();
-                            application.Print("Viwe Payroll\n\n");
+                            application.Print("New Payroll\n\n");
 
-                            string id2 = application.Input("Employee ID: ");
+                            application.Print("Name: " + employee.name + "\n");
+                            application.Print("Age: " + employee.age + "\n");
+                            application.Print("Job Title: " + employee.jobTitle + "\n");
+                            application.Print("NI Code: " + employee.nationalInsurance + "\n");
+                            application.Print("Tax Code: " + employee.taxCode + "\n");
+
+                            application.Print("\n");
+                            application.Print("Hours: " + employee.weeklyHours * 4 + "\n");
+                            //employee.overtimeHours = int.Parse(application.Input("Overtime: "));
+
+                            application.Print("\n");
                             application.Print("\n");
 
-                            // If an employee is found, print their information
-                            if (id2 == employees[0].id.ToString())
-                            {
-                                application.Print("Employee Name: " + employees[0].name + "\n");
-                                application.Print("Employee Age: " + employees[0].age + "\n");
-                                application.Print("Employee Job Title: " + employees[0].jobTitle + "\n");
-                                application.Print("Employee NI: " + employees[0].nationalInsurance + "\n");
-                                application.Print("Employee Tax Code: " + employees[0].taxCode + "\n");
-                            }
-                            else
-                            {
-                                application.Print("Employee Not Found.", ConsoleColor.Red);
-                                Console.ReadLine();
+                            // Display 'menu' buttons
+                            string choice = application.ButtonInput("Exit", "Next");
 
+                            if (choice == "Exit")
+                            {
+
+                                application.Print("\n");
+                                application.Print("Going Back To Main Menu", ConsoleColor.Yellow);
+                                Thread.Sleep(1500);
                                 break;
-                            }
 
-                            CalculateEmployeeEarnings(ref employees[0]);
-                            application.Print("\n");
-                            application.Print("Normal Pay: " + "£" + employees[0].normalPay.ToString() + "\n");
-                            application.Print("Overtime Pay: " + "£" + employees[0].overtimePay.ToString() + "\n");
-                            application.Input("Gross Pay: " + "£" + employees[0].grossPay.ToString() + "\n");
+                            }
+                            else if (choice == "Next")
+                            {
+                                application.Print("\n");
+                                application.Print("Going To Next Customer", ConsoleColor.Yellow);
+                                Thread.Sleep(1500);
+                                continue;
+                            }
+                        }
+                        
+
+                        // Switch to the next command for convenience
+                        //currentCommand = application.commands[CommandTypes.VIEWPAYROLL].ToString();
+                    }
+                    else if (currentCommand == application.commands[CommandTypes.VIEWPAYROLL].ToString())
+                    {
+                        Console.Clear();
+                        application.PrintTitle();
+                        application.Print("Viwe Payroll\n\n");
+
+                        string id2 = application.Input("Employee ID: ");
+                        application.Print("\n");
+
+                        // If an employee is found, print their information
+                        if (id2 == employees[0].id.ToString())
+                        {
+                            application.Print("Employee Name: " + employees[0].name + "\n");
+                            application.Print("Employee Age: " + employees[0].age + "\n");
+                            application.Print("Employee Job Title: " + employees[0].jobTitle + "\n");
+                            application.Print("Employee NI: " + employees[0].nationalInsurance + "\n");
+                            application.Print("Employee Tax Code: " + employees[0].taxCode + "\n");
+                        }
+                        else
+                        {
+                            application.Print("Employee Not Found.", ConsoleColor.Red);
+                            Console.ReadLine();
 
                             break;
+                        }
+
+                        employees[0].CalculateEmployeeEarnings();
+                        application.Print("\n");
+                        application.Print("Normal Pay: " + "£" + employees[0].normalPay.ToString() + "\n");
+                        application.Print("Overtime Pay: " + "£" + employees[0].overtimePay.ToString() + "\n");
+                        application.Input("Gross Pay: " + "£" + employees[0].grossPay.ToString() + "\n");
                     }
                 }
 
