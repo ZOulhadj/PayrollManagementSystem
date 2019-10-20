@@ -15,11 +15,11 @@ namespace PayrollManagementSystem
 
     public class Application
     {
+        public string applicationTitle;
         private int consoleWidth, consoleHeight;
         private int commandIndex = 0;
-        public string title = "Payroll Mangement System";
 
-        // An ordered array of commands
+        // An ordered array of commands (Key, Value)
         public OrderedDictionary commands = new OrderedDictionary
         {
             { CommandTypes.NEWPAYROLL,      "(1) New Payroll" },
@@ -28,8 +28,9 @@ namespace PayrollManagementSystem
             { CommandTypes.NEWCUSTOMER,     "(4) New Customer" }
         };
 
-        public Application(int width, int height)
+        public Application(string title, int width, int height)
         {
+            applicationTitle = title;
             consoleWidth = width;
             consoleHeight = height;
 
@@ -43,7 +44,7 @@ namespace PayrollManagementSystem
         {
             // Set console and buffer size
             Console.SetWindowSize(consoleWidth, consoleHeight);
-            //Console.SetBufferSize(consoleWidth, consoleHeight);
+            Console.SetBufferSize(consoleWidth, consoleHeight);
             Console.BackgroundColor = ConsoleColor.DarkBlue;
             Console.CursorVisible = false;
         }
@@ -63,9 +64,9 @@ namespace PayrollManagementSystem
         {
             // Set cursor position and print message
             if (add)
-                Console.SetCursorPosition((Console.WindowWidth + title.Length) / 2 + position, Console.CursorTop);
+                Console.SetCursorPosition((Console.WindowWidth + applicationTitle.Length) / 2 + position, Console.CursorTop);
             else
-                Console.SetCursorPosition((Console.WindowWidth - title.Length) / 2 + position, Console.CursorTop);
+                Console.SetCursorPosition((Console.WindowWidth - applicationTitle.Length) / 2 + position, Console.CursorTop);
 
             Console.ForegroundColor = textColor;
             Console.BackgroundColor = backgroundColor;
@@ -85,15 +86,15 @@ namespace PayrollManagementSystem
         public void PrintTitle()
         {
             // Print top title border
-            for (int i = 0; i < title.Length; ++i)
-                Print((i < title.Length - 1) ? "*" : "*\n", ConsoleColor.White, ConsoleColor.DarkBlue, i);
+            for (int i = 0; i < applicationTitle.Length; ++i)
+                Print((i < applicationTitle.Length - 1) ? "*" : "*\n", ConsoleColor.White, ConsoleColor.DarkBlue, i);
 
             // Print appliation title
-            Print(title + "\n");
+            Print(applicationTitle + "\n");
 
             // Print bottom title border
-            for (int i = 0; i < title.Length; ++i)
-                Print((i < title.Length - 1) ? "*" : "*\n", ConsoleColor.White, ConsoleColor.DarkBlue, i);
+            for (int i = 0; i < applicationTitle.Length; ++i)
+                Print((i < applicationTitle.Length - 1) ? "*" : "*\n", ConsoleColor.White, ConsoleColor.DarkBlue, i);
         }
 
         // Display buttons and accept user input
@@ -194,6 +195,12 @@ namespace PayrollManagementSystem
         public double totalDeductions;
         public double netPay;
 
+        public void PrintEmployeeInformation(Application application)
+        {
+            application.Print("Name: " + name + "\n");
+            application.Print("Age: " + age + "\n");
+            application.Print("Job Title: " + jobTitle + "\n");
+        }
         public void CalculateEmployeeEarnings()
         {
             // Calculate hourly pay
@@ -250,6 +257,21 @@ namespace PayrollManagementSystem
             // Calculate montly net pay
             netPay = Math.Round(grossPay - totalDeductions, 2);
         }
+
+        public void PrintInformation(Application application)
+        {
+            application.Print("\n");
+            application.Print("Normal Pay: " + "£" + normalPay.ToString() + "\n");
+            application.Print("Overtime Pay: " + "£" + overtimePay.ToString() + "\n");
+            application.Print("Gross Pay: " + "£" + grossPay.ToString() + "\n");
+            application.Print("Tax Code: " + taxCode + "\n");
+            application.Print("Tax: " + "£" + tax + "\n");
+            application.Print("National Insurance: " + "£" + nationalInsurance + "\n");
+            application.Print("Total Deductions: " + "£" + totalDeductions + "\n");
+            application.Print("\n");
+            application.Print("\n");
+            application.Print("Net Pay: " + "£" + netPay + "\n");
+        }
     }
 
     class Program
@@ -257,18 +279,18 @@ namespace PayrollManagementSystem
         static void Main(string[] args)
         {
             // Initialise application
-            Application application = new Application(80, 30);
+            Application application = new Application("Payroll Mangement System", 80, 30);
 
             // Initialise employee data
             Employee[] employees = new Employee[2];
             employees[0].name = "Zakariya";
-            employees[0].age = 45;
+            employees[0].age = 18;
             employees[0].jobTitle = Enum.GetName(typeof(PositionHours), PositionHours.CHEF);
             employees[0].apprentice = false;
             employees[0].weeklyHours = (int)Enum.Parse(typeof(PositionHours), employees[0].jobTitle); // Calculate weekly hours based on the job title
 
             employees[1].name = "Tom";
-            employees[1].age = 19;
+            employees[1].age = 45;
             employees[1].jobTitle = Enum.GetName(typeof(PositionHours), PositionHours.WAITER);
             employees[1].apprentice = true;
             employees[1].weeklyHours = (int)Enum.Parse(typeof(PositionHours), employees[1].jobTitle); // Calculate weekly hours based on the job title
@@ -285,6 +307,7 @@ namespace PayrollManagementSystem
                 // Get command using input (arrow keys)
                 currentCommand = application.CommandList();
 
+                // TODO: Fix double key repeat
                 // Depending on the command do certain actions
                 if (Console.ReadKey().Key == ConsoleKey.Enter)
                 {
@@ -304,9 +327,7 @@ namespace PayrollManagementSystem
                             application.Print("New Payroll\n\n");
                             application.Print(payrollDateRange + "\n\n");
 
-                            application.Print("Name: " + employees[i].name + "\n");
-                            application.Print("Age: " + employees[i].age + "\n");
-                            application.Print("Job Title: " + employees[i].jobTitle + "\n");
+                            employees[i].PrintEmployeeInformation(application);
 
                             application.Print("\n");
                             application.Print("Hours: " + employees[i].weeklyHours * 4 + "\n");
@@ -344,7 +365,6 @@ namespace PayrollManagementSystem
                             }
                         }
 
-
                         // Switch to the next command for convenience
                         //currentCommand = application.commands[CommandTypes.VIEWPAYROLL].ToString();
                     }
@@ -357,7 +377,6 @@ namespace PayrollManagementSystem
                         // Display payslip date range (1 Month)
                         string payrollDateRange = DateTime.Today.AddMonths(-1).ToString("dd/MM/yyyy") + " - " + DateTime.Today.ToString("dd/MM/yyyy");
 
-
                         for (uint i = 0; i < employees.Length; ++i)
                         {
                             Console.Clear();
@@ -365,35 +384,19 @@ namespace PayrollManagementSystem
                             application.Print("View Payroll\n\n");
                             application.Print(payrollDateRange + "\n\n");
 
-                            application.Print("Employee Name: " + employees[i].name + "\n");
-                            application.Print("Employee Age: " + employees[i].age + "\n");
-                            application.Print("Employee Job Title: " + employees[i].jobTitle + "\n");
-
+                            employees[i].PrintEmployeeInformation(application);
                             employees[i].CalculateEmployeeEarnings();
-                            application.Print("\n");
-                            application.Print("Normal Pay: " + "£" + employees[i].normalPay.ToString() + "\n");
-                            application.Print("Overtime Pay: " + "£" + employees[i].overtimePay.ToString() + "\n");
-                            application.Print("Gross Pay: " + "£" + employees[i].grossPay.ToString() + "\n");
-                            application.Print("Tax Code: " + employees[i].taxCode + "\n");
-                            application.Print("Tax: " + "£" + employees[i].tax + "\n");
-                            application.Print("National Insurance: " + "£" + employees[i].nationalInsurance + "\n");
-                            application.Print("Total Deductions: " + "£" + employees[i].totalDeductions + "\n");
-                            application.Print("\n");
-                            application.Print("\n");
-                            application.Print("Net Pay: " + "£" + employees[i].netPay + "\n");
-
+                            employees[i].PrintInformation(application);
 
                             // Display 'menu' buttons
                             string choice = application.ButtonInput("Exit", "Next");
 
                             if (choice == "Exit")
                             {
-
                                 application.Print("\n");
                                 application.Print("Going Back To Main Menu", ConsoleColor.Yellow);
                                 application.Wait();
                                 break;
-
                             }
                             else if (choice == "Next")
                             {
@@ -411,16 +414,11 @@ namespace PayrollManagementSystem
                                 continue;
                             }
                         }
-
-
                     }
-
                     // TODO: If user enters then complete task
                     Thread.Sleep(100);
-                }
-                
+                }   
             }
-
         }
     }
 }
