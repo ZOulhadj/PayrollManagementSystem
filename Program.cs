@@ -10,8 +10,8 @@ namespace PayrollManagementSystem
     {
         NEWPAYROLL, 
         VIEWPAYROLL, 
-        PRINTPAYROLL, 
-        NEWCUSTOMER 
+        NEWEMPLOYEE,
+        REMOVEEMPLOYEE
     };
 
     public class Application
@@ -27,8 +27,8 @@ namespace PayrollManagementSystem
         {
             { CommandTypes.NEWPAYROLL,      "(1) New Payroll" },
             { CommandTypes.VIEWPAYROLL,     "(2) View Payroll" },
-            { CommandTypes.PRINTPAYROLL,    "(3) Print Payroll" },
-            { CommandTypes.NEWCUSTOMER,     "(4) New Customer" }
+            { CommandTypes.NEWEMPLOYEE,     "(3) New Employee" },
+            { CommandTypes.REMOVEEMPLOYEE,  "(4) Remove Employee"}
         };
 
         public Application(string title, int width, int height)
@@ -105,8 +105,8 @@ namespace PayrollManagementSystem
         public string ButtonInput(string first, string second)
         {
             // Display initial buttons
-            //Print(second, ConsoleColor.White, ConsoleColor.DarkBlue, 0, true);
-            //Print(first, ConsoleColor.Black, ConsoleColor.White);
+            Print(second, ConsoleColor.White, ConsoleColor.DarkBlue, 0, true);
+            Print(first, ConsoleColor.Black, ConsoleColor.White);
 
             // Button selection
             string choice = "";
@@ -336,16 +336,31 @@ namespace PayrollManagementSystem
 
                         for (int i = 0; i < employees.Count; ++i)
                         {
-                            Console.Clear();
-                            application.PrintTitle();
-                            application.Print("New Payroll\n\n");
-                            application.Print(payrollDateRange + "\n\n");
+                            // Ensure that overtime input is valid
+                            while (true)
+                            {
+                                Console.Clear();
+                                application.PrintTitle();
+                                application.Print("New Payroll\n\n");
+                                application.Print(payrollDateRange + "\n\n");
 
-                            employees[i].PrintEmployeeInformation(application);
+                                employees[i].PrintEmployeeInformation(application);
 
-                            application.Print("\n");
-                            application.Print("Hours: " + employees[i].weeklyHours * 4 + "\n");
-                            employees[i].SetOvertimeHours(int.Parse(application.Input("Overtime: ")));
+                                application.Print("\n");
+                                application.Print("Hours: " + employees[i].weeklyHours * 4 + "\n");
+                                try
+                                {
+                                    employees[i].SetOvertimeHours(int.Parse(application.Input("Overtime: ")));
+
+                                    break;
+                                } catch (Exception e)
+                                {
+                                    application.Print("\n");
+                                    application.Print("Invalid input. Try again.", ConsoleColor.Red);
+                                    application.Wait();
+                                }
+
+                            }
                             application.Print("\n");
                             application.Print("\n");
 
@@ -363,21 +378,18 @@ namespace PayrollManagementSystem
                             {
                                 application.Print("\n");
 
-                                // Last means there are no more customers
-                                if (i == employees.Count - 1)
+                                // Last means there are no more employees
+                                if (i < employees.Count)
                                 {
-                                    application.Print("No More Customers... Exiting", ConsoleColor.Red);
+                                    application.Print("No More Employees... Exiting", ConsoleColor.Red);
                                     application.Wait();
                                     break;
                                 }
-                                application.Print("Going To The Next Customer", ConsoleColor.Yellow);
+                                application.Print("Going To The Next Employee", ConsoleColor.Yellow);
                                 application.Wait();
                                 continue;
                             }
                         }
-                        
-                        // Switch to the next command for convenience
-                        //currentCommand = application.commands[CommandTypes.VIEWPAYROLL].ToString();
                     }
                     
                     // An overview of an employees payroll
@@ -400,6 +412,7 @@ namespace PayrollManagementSystem
                             employees[i].PrintEmployeeInformation(application);
                             employees[i].CalculateEmployeeEarnings();
                             employees[i].PrintInformation(application);
+                            application.Print("\n");
 
                             // Display 'menu' buttons
                             string choice = application.ButtonInput("Exit", "Next");
@@ -416,32 +429,27 @@ namespace PayrollManagementSystem
                                 application.Print("\n");
 
                                 // Last means there are no more customers
-                                if (i == employees.Count - 1)
+                                if (i < employees.Count)
                                 {
-                                    application.Print("No More Customers... Exiting", ConsoleColor.Red);
+                                    application.Print("No More Employees... Exiting", ConsoleColor.Red);
                                     application.Wait();
                                     break;
                                 }
-                                application.Print("Going To The Next Customer", ConsoleColor.Yellow);
+                                application.Print("Going To The Next Employees", ConsoleColor.Yellow);
                                 application.Wait();
                                 continue;
                             }
                         }
                     }
                     
-                    // Print/Export payroll
-                    if (currentCommand == application.GetCommand(CommandTypes.PRINTPAYROLL))
-                        continue;
-
                     // Add a new customer to the system
-                    // TODO: Maybe have a file containning all employees
-                    if (currentCommand == application.GetCommand(CommandTypes.NEWCUSTOMER))
+                    if (currentCommand == application.GetCommand(CommandTypes.NEWEMPLOYEE))
                     {
                         Console.Clear();
                         application.PrintTitle();
-                        application.Print("New Customer\n\n");
+                        application.Print("New Employee\n\n");
 
-                        // Add new customer
+                        // Add new employee to the list
                         try
                         {
                             Employee employee = new Employee();
@@ -458,11 +466,33 @@ namespace PayrollManagementSystem
                         } catch (Exception e)
                         {
                             application.Print("\n");
-                            application.Print("Error adding new customer!\n", ConsoleColor.Red);
+                            application.Print("Error adding new employee!\n", ConsoleColor.Red);
                             application.Print(e.Message + "\n", ConsoleColor.Red);
                             application.Print("Exiting back to main menu...\n", ConsoleColor.Yellow);
                             application.Wait(4000);
                         }
+                    }
+
+                    // Remove an employee from the employees list
+                    if (currentCommand == application.GetCommand(CommandTypes.REMOVEEMPLOYEE))
+                    {
+                        Console.Clear();
+                        application.PrintTitle();
+                        application.Print("Remove Employee\n\n");
+
+                        string name = application.Input("Name: ");
+                        if (employees.Remove(employees.Find(employee => employee.name == name)))
+                        {
+                            application.Print("\n");
+                            application.Print("Employee " + name + " has been removed for the list", ConsoleColor.Green);
+                        }
+                        else
+                        {
+                            application.Print("Could not find employee " + "'" + name + "'\n", ConsoleColor.Red);
+                            application.Print("\n");
+                        }
+
+                        application.Wait();
                     }
                 }
 
