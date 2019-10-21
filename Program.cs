@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.IO;
 
 namespace PayrollManagementSystem
 {
@@ -46,7 +45,8 @@ namespace PayrollManagementSystem
         // Initialise the console window
         public void InitialiseWindow(ConsoleColor backgroundColor, bool cursorVisible)
         {
-            // Set console and buffer size
+            // Initialise console
+            Console.Title = m_ApplicationTitle + " - ©Zakariya Oulhadj";
             Console.SetWindowSize(m_ConsoleWidth, m_ConsoleHeight);
             Console.SetBufferSize(m_ConsoleWidth, m_ConsoleHeight);
             Console.BackgroundColor = backgroundColor;
