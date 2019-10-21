@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Threading;
+using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.IO;
 
 namespace PayrollManagementSystem
 {
@@ -15,12 +17,14 @@ namespace PayrollManagementSystem
 
     public class Application
     {
-        public string applicationTitle;
-        private int consoleWidth, consoleHeight;
-        private int commandIndex = 0;
+        // Applicaiton member variables
+        private string m_ApplicationTitle;
+        private int m_ConsoleWidth, m_ConsoleHeight;
+        private int m_CommandIndex = 0;
+        private bool m_EnterPressed;
 
         // An ordered array of commands (Key, Value)
-        public OrderedDictionary commands = new OrderedDictionary
+        private OrderedDictionary commands = new OrderedDictionary
         {
             { CommandTypes.NEWPAYROLL,      "(1) New Payroll" },
             { CommandTypes.VIEWPAYROLL,     "(2) View Payroll" },
@@ -30,29 +34,29 @@ namespace PayrollManagementSystem
 
         public Application(string title, int width, int height)
         {
-            applicationTitle = title;
-            consoleWidth = width;
-            consoleHeight = height;
+            m_ApplicationTitle = title;
+            m_ConsoleWidth = width;
+            m_ConsoleHeight = height;
 
-            InitialiseWindow();
+            InitialiseWindow(ConsoleColor.DarkBlue, false);
         }
 
         ~Application() {}
 
         // Initialise the console window
-        public void InitialiseWindow()
+        public void InitialiseWindow(ConsoleColor backgroundColor, bool cursorVisible)
         {
             // Set console and buffer size
-            Console.SetWindowSize(consoleWidth, consoleHeight);
-            Console.SetBufferSize(consoleWidth, consoleHeight);
-            Console.BackgroundColor = ConsoleColor.DarkBlue;
-            Console.CursorVisible = false;
+            Console.SetWindowSize(m_ConsoleWidth, m_ConsoleHeight);
+            Console.SetBufferSize(m_ConsoleWidth, m_ConsoleHeight);
+            Console.BackgroundColor = backgroundColor;
+            Console.CursorVisible = cursorVisible;
         }
 
         // Standard application wait time
-        public void Wait()
+        public void Wait(int sleep = 2000)
         {
-            Thread.Sleep(2000);
+            Thread.Sleep(sleep);
         }
 
         // Print strings onto the console
@@ -64,9 +68,9 @@ namespace PayrollManagementSystem
         {
             // Set cursor position and print message
             if (add)
-                Console.SetCursorPosition((Console.WindowWidth + applicationTitle.Length) / 2 + position, Console.CursorTop);
+                Console.SetCursorPosition((Console.WindowWidth + m_ApplicationTitle.Length) / 2 + position, Console.CursorTop);
             else
-                Console.SetCursorPosition((Console.WindowWidth - applicationTitle.Length) / 2 + position, Console.CursorTop);
+                Console.SetCursorPosition((Console.WindowWidth - m_ApplicationTitle.Length) / 2 + position, Console.CursorTop);
 
             Console.ForegroundColor = textColor;
             Console.BackgroundColor = backgroundColor;
@@ -86,15 +90,15 @@ namespace PayrollManagementSystem
         public void PrintTitle()
         {
             // Print top title border
-            for (int i = 0; i < applicationTitle.Length; ++i)
-                Print((i < applicationTitle.Length - 1) ? "*" : "*\n", ConsoleColor.White, ConsoleColor.DarkBlue, i);
+            for (int i = 0; i < m_ApplicationTitle.Length; ++i)
+                Print((i < m_ApplicationTitle.Length - 1) ? "*" : "*\n", ConsoleColor.White, ConsoleColor.DarkBlue, i);
 
             // Print appliation title
-            Print(applicationTitle + "\n");
+            Print(m_ApplicationTitle + "\n");
 
             // Print bottom title border
-            for (int i = 0; i < applicationTitle.Length; ++i)
-                Print((i < applicationTitle.Length - 1) ? "*" : "*\n", ConsoleColor.White, ConsoleColor.DarkBlue, i);
+            for (int i = 0; i < m_ApplicationTitle.Length; ++i)
+                Print((i < m_ApplicationTitle.Length - 1) ? "*" : "*\n", ConsoleColor.White, ConsoleColor.DarkBlue, i);
         }
 
         // Display buttons and accept user input
@@ -130,34 +134,42 @@ namespace PayrollManagementSystem
             }
         }
 
-        // Get string command based on the command type
-        public string GetCommand(CommandTypes commandType)
+        // Get command object based on the command type
+        public object GetCommand(CommandTypes commandType)
         {
-            return commands[commandType].ToString();
+            return commands[commandType];
         }
 
         // Filter through commands
-        public string CommandList()
+        public object CommandList()
         {
+            m_EnterPressed = false;
             switch (Console.ReadKey().Key)
             {
                 case ConsoleKey.UpArrow:
                     // Bounds checking
-                    if (commandIndex == commands.Count - 1)
-                        return commands[commandIndex = 0].ToString();
+                    if (m_CommandIndex == commands.Count - 1)
+                        return commands[m_CommandIndex = 0];
 
-                    return commands[++commandIndex].ToString();
+                    return commands[++m_CommandIndex];
                 case ConsoleKey.DownArrow:
                     // Bounds checking
-                    if (commandIndex == 0)
-                        return commands[commandIndex = commands.Count - 1].ToString();
+                    if (m_CommandIndex == 0)
+                        return commands[m_CommandIndex = commands.Count - 1];
 
-                    return commands[--commandIndex].ToString();
+                    return commands[--m_CommandIndex];
                 case ConsoleKey.Enter:
-                    return commands[commandIndex].ToString();
+                    m_EnterPressed = true;
+                    return commands[m_CommandIndex];
                 default:
-                    return commands[commandIndex].ToString();
+                    return commands[m_CommandIndex];
             }
+        }
+
+        // Check if the enter key has been pressed
+        public bool IsEnterPressed()
+        {
+            return m_EnterPressed;
         }
     }
 
@@ -172,7 +184,7 @@ namespace PayrollManagementSystem
         CLEANER = 14
     }
 
-    public struct Employee
+    public class Employee
     {
         public string name;
         public uint age;
@@ -181,7 +193,7 @@ namespace PayrollManagementSystem
         public int weeklyHours;
 
         public int overtimeHours;
-        
+
         public double hourlyPay;
         public double normalPay;
         public double overtimePay;
@@ -201,6 +213,12 @@ namespace PayrollManagementSystem
             application.Print("Age: " + age + "\n");
             application.Print("Job Title: " + jobTitle + "\n");
         }
+
+        public void SetOvertimeHours(int overtime)
+        {
+            overtimeHours = overtime;
+        }
+
         public void CalculateEmployeeEarnings()
         {
             // Calculate hourly pay
@@ -281,37 +299,33 @@ namespace PayrollManagementSystem
             // Initialise application
             Application application = new Application("Payroll Mangement System", 80, 30);
 
-            // Initialise employee data
-            Employee[] employees = new Employee[2];
-            employees[0].name = "Zakariya";
-            employees[0].age = 18;
-            employees[0].jobTitle = Enum.GetName(typeof(PositionHours), PositionHours.CHEF);
-            employees[0].apprentice = false;
-            employees[0].weeklyHours = (int)Enum.Parse(typeof(PositionHours), employees[0].jobTitle); // Calculate weekly hours based on the job title
+            // Initialise example employee data
+            List<Employee> employees = new List<Employee>();
+            employees.Add(new Employee
+            {
+                name = "Zakariya",
+                age = 18,
+                jobTitle = Enum.GetName(typeof(PositionHours), PositionHours.CHEF),
+                apprentice = false,
+                weeklyHours = (int)Enum.Parse(typeof(PositionHours), "CHEF")
+            });
 
-            employees[1].name = "Tom";
-            employees[1].age = 45;
-            employees[1].jobTitle = Enum.GetName(typeof(PositionHours), PositionHours.WAITER);
-            employees[1].apprentice = true;
-            employees[1].weeklyHours = (int)Enum.Parse(typeof(PositionHours), employees[1].jobTitle); // Calculate weekly hours based on the job title
-
-            string currentCommand = application.GetCommand(CommandTypes.NEWPAYROLL);
+            object currentCommand = application.GetCommand(CommandTypes.NEWPAYROLL);
             while (true)
             {
+                // Clear the window when new text is printed
                 Console.Clear();
+                
+                // Print title and accept command selection
                 application.PrintTitle();
-
-                application.Print("Command: ");
-                Console.Write(currentCommand);
-
-                // Get command using input (arrow keys)
+                application.Print("Command: " + currentCommand);
                 currentCommand = application.CommandList();
 
-                // TODO: Fix double key repeat
-                // Depending on the command do certain actions
-                if (Console.ReadKey().Key == ConsoleKey.Enter)
+                // Once the user hits the enter button, complete a certain task
+                if (application.IsEnterPressed())
                 {
-                    if (currentCommand == application.commands[CommandTypes.NEWPAYROLL].ToString())
+                    // Create a new employee payroll
+                    if (currentCommand == application.GetCommand(CommandTypes.NEWPAYROLL))
                     {
                         Console.Clear();
                         application.PrintTitle();
@@ -320,7 +334,7 @@ namespace PayrollManagementSystem
                         // Display payslip date range (1 Month)
                         string payrollDateRange = DateTime.Today.AddMonths(-1).ToString("dd/MM/yyyy") + " - " + DateTime.Today.ToString("dd/MM/yyyy");
 
-                        for (uint i = 0; i < employees.Length; ++i)
+                        for (int i = 0; i < employees.Count; ++i)
                         {
                             Console.Clear();
                             application.PrintTitle();
@@ -331,8 +345,7 @@ namespace PayrollManagementSystem
 
                             application.Print("\n");
                             application.Print("Hours: " + employees[i].weeklyHours * 4 + "\n");
-                            employees[i].overtimeHours = int.Parse(application.Input("Overtime: "));
-
+                            employees[i].SetOvertimeHours(int.Parse(application.Input("Overtime: ")));
                             application.Print("\n");
                             application.Print("\n");
 
@@ -341,19 +354,17 @@ namespace PayrollManagementSystem
 
                             if (choice == "Exit")
                             {
-
                                 application.Print("\n");
                                 application.Print("Going Back To Main Menu", ConsoleColor.Yellow);
                                 application.Wait();
                                 break;
-
                             }
                             else if (choice == "Next")
                             {
                                 application.Print("\n");
 
                                 // Last means there are no more customers
-                                if (i == employees.Length - 1)
+                                if (i == employees.Count - 1)
                                 {
                                     application.Print("No More Customers... Exiting", ConsoleColor.Red);
                                     application.Wait();
@@ -364,11 +375,13 @@ namespace PayrollManagementSystem
                                 continue;
                             }
                         }
-
+                        
                         // Switch to the next command for convenience
                         //currentCommand = application.commands[CommandTypes.VIEWPAYROLL].ToString();
                     }
-                    else if (currentCommand == application.commands[CommandTypes.VIEWPAYROLL].ToString())
+                    
+                    // An overview of an employees payroll
+                    if (currentCommand == application.GetCommand(CommandTypes.VIEWPAYROLL))
                     {
                         Console.Clear();
                         application.PrintTitle();
@@ -377,7 +390,7 @@ namespace PayrollManagementSystem
                         // Display payslip date range (1 Month)
                         string payrollDateRange = DateTime.Today.AddMonths(-1).ToString("dd/MM/yyyy") + " - " + DateTime.Today.ToString("dd/MM/yyyy");
 
-                        for (uint i = 0; i < employees.Length; ++i)
+                        for (int i = 0; i < employees.Count; ++i)
                         {
                             Console.Clear();
                             application.PrintTitle();
@@ -403,7 +416,7 @@ namespace PayrollManagementSystem
                                 application.Print("\n");
 
                                 // Last means there are no more customers
-                                if (i == employees.Length - 1)
+                                if (i == employees.Count - 1)
                                 {
                                     application.Print("No More Customers... Exiting", ConsoleColor.Red);
                                     application.Wait();
@@ -415,9 +428,46 @@ namespace PayrollManagementSystem
                             }
                         }
                     }
-                    // TODO: If user enters then complete task
-                    Thread.Sleep(100);
-                }   
+                    
+                    // Print/Export payroll
+                    if (currentCommand == application.GetCommand(CommandTypes.PRINTPAYROLL))
+                        continue;
+
+                    // Add a new customer to the system
+                    // TODO: Maybe have a file containning all employees
+                    if (currentCommand == application.GetCommand(CommandTypes.NEWCUSTOMER))
+                    {
+                        Console.Clear();
+                        application.PrintTitle();
+                        application.Print("New Customer\n\n");
+
+                        // Add new customer
+                        try
+                        {
+                            Employee employee = new Employee();
+                            employee.name = application.Input("Name: ");
+                            employee.age = uint.Parse(application.Input("Age: "));
+                            employee.jobTitle = application.Input("Job Title: ");
+                            employee.apprentice = bool.Parse(application.Input("Apprentice: "));
+                            employee.weeklyHours = (int)Enum.Parse(typeof(PositionHours), employee.jobTitle);
+
+                            employees.Add(employee);
+
+                            application.Print("A new employee has been added!\n", ConsoleColor.Green);
+                            application.Wait(3000);
+                        } catch (Exception e)
+                        {
+                            application.Print("\n");
+                            application.Print("Error adding new customer!\n", ConsoleColor.Red);
+                            application.Print(e.Message + "\n", ConsoleColor.Red);
+                            application.Print("Exiting back to main menu...\n", ConsoleColor.Yellow);
+                            application.Wait(4000);
+                        }
+                    }
+                }
+
+                // Note: Stops the window from flashing in some instances
+                application.Wait(100);
             }
         }
     }
