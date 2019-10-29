@@ -16,7 +16,7 @@ namespace PayrollManagementSystem
 
     public class Application
     {
-        // Applicaiton member variables
+        // Application member variables
         private string m_ApplicationTitle;
         private int m_ConsoleWidth, m_ConsoleHeight;
         private int m_CommandIndex = 0;
@@ -93,7 +93,7 @@ namespace PayrollManagementSystem
             for (int i = 0; i < m_ApplicationTitle.Length; ++i)
                 Print((i < m_ApplicationTitle.Length - 1) ? "*" : "*\n", ConsoleColor.White, ConsoleColor.DarkBlue, i);
 
-            // Print appliation title
+            // Print application title
             Print(m_ApplicationTitle + "\n");
 
             // Print bottom title border
@@ -256,7 +256,7 @@ namespace PayrollManagementSystem
                 tax = Math.Round((yearlyPay / 2) / 12, 2);
             }
 
-            // Calculate montly national insurance
+            // Calculate monthly national insurance
             uint nationalInsurancePercentage = 0;
             if (yearlyPay > 8632 && yearlyPay <= 50000)
             {
@@ -269,10 +269,10 @@ namespace PayrollManagementSystem
                 nationalInsurance = Math.Round((yearlyPay / nationalInsurancePercentage) / 12, 2);
             }
 
-            // Calculate montly total deduction
+            // Calculate monthly total deduction
             totalDeductions = Math.Round((tax + nationalInsurance), 2);
 
-            // Calculate montly net pay
+            // Calculate monthly net pay
             netPay = Math.Round(grossPay - totalDeductions, 2);
         }
 
@@ -297,7 +297,7 @@ namespace PayrollManagementSystem
         static void Main(string[] args)
         {
             // Initialise application
-            Application application = new Application("Payroll Mangement System", 80, 30);
+            Application application = new Application("Payroll Management System", 80, 30);
 
             // Initialise example employee data
             List<Employee> employees = new List<Employee>();
