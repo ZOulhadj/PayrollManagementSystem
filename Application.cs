@@ -270,7 +270,7 @@ namespace PayrollManagementSystem
                     // Open a help file
                     if (currentCommand == commands[CommandTypes.HELP])
                     {
-                        OpenFile(@"..\..\..\Files\Help.txt");
+                        OpenFile(@"Help.txt");
                     }
                 }
 
