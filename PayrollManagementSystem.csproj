@@ -5,6 +5,8 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <Authors>Zakariya Oulhadj</Authors>
     <Company />
+    <ApplicationIcon />
+    <StartupObject />
   </PropertyGroup>
 
 </Project>
