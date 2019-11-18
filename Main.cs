@@ -6,8 +6,8 @@
         {
             // Initialise application
             Application application = new Application("Payroll Management System", 80, 30);
-
-            // Main application loop
+            
+            // Main loop
             application.Loop();
         }
     }
